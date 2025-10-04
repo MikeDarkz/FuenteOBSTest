@@ -2,148 +2,120 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Overlay Videojuegos</title>
+    <title>Overlay OBS</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
             background: transparent;
             font-family: 'Poppins', sans-serif;
-            color: #d6c9ff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            text-align: center;
+            color: #c0aaff;
+            overflow: hidden;
         }
-
-        .search-box {
-            margin-bottom: 20px;
-        }
-
-            .search-box input {
-                padding: 10px;
-                border-radius: 10px;
-                border: 2px solid #6c63ff;
-                background: rgba(20, 10, 40, 0.9);
-                color: #00d4ff;
-                font-size: 16px;
-                outline: none;
-                box-shadow: 0 0 10px #6c63ff;
-            }
-
-            .search-box button {
-                margin-left: 10px;
-                padding: 10px 15px;
-                border: none;
-                border-radius: 10px;
-                background: linear-gradient(45deg, #6c63ff, #00d4ff);
-                color: white;
-                font-size: 16px;
-                cursor: pointer;
-                box-shadow: 0 0 10px #00d4ff, 0 0 20px #6c63ff;
-                transition: 0.3s;
-            }
-
-                .search-box button:hover {
-                    transform: scale(1.05);
-                    box-shadow: 0 0 20px #00d4ff, 0 0 40px #6c63ff;
-                }
 
         .card {
             background: rgba(20, 10, 40, 0.8);
-            border: 2px solid #6c63ff;
             border-radius: 20px;
-            box-shadow: 0 0 20px #6c63ff, 0 0 40px #00d4ff;
             padding: 20px;
-            max-width: 500px;
-            text-align: center;
-            animation: glow 2s infinite alternate;
+            box-shadow: 0 0 25px #6c63ff, 0 0 50px #00d4ff;
+            max-width: 420px;
+            margin: auto;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.6s ease-in-out;
         }
 
-            .card img {
-                max-width: 100%;
-                border-radius: 15px;
-                margin-bottom: 15px;
-                box-shadow: 0 0 15px #00d4ff;
+            .card.show {
+                opacity: 1;
+                transform: scale(1);
             }
 
+        img {
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 0 20px #00d4ff, 0 0 30px #6c63ff;
+            margin-top: 10px;
+        }
+
         .title {
-            font-size: 28px;
+            font-size: 26px;
             color: #00d4ff;
-            margin-bottom: 10px;
+            margin: 15px 0;
+            text-shadow: 0 0 10px #00d4ff, 0 0 20px #6c63ff;
         }
 
         .info {
-            font-size: 18px;
-            color: #c0aaff;
-            margin: 5px 0;
-        }
-
-        @keyframes glow {
-            from {
-                box-shadow: 0 0 15px #6c63ff;
-            }
-
-            to {
-                box-shadow: 0 0 40px #00d4ff, 0 0 80px #6c63ff;
-            }
+            font-size: 16px;
+            color: #d6c9ff;
+            margin: 6px 0;
         }
     </style>
 </head>
 <body>
-    <!-- Caja de búsqueda -->
-    <div class="search-box">
-        <input type="text" id="search-input" placeholder="Escribe un juego...">
-        <button onclick="searchGame()">Buscar</button>
+    <div class="card" id="card">
+        <div class="title" id="title">Esperando...</div>
+        <img id="img" style="display:none;">
+        <div class="info" id="platforms"></div>
+        <div class="info" id="genres"></div>
+        <div class="info" id="year"></div>
     </div>
 
-    <!-- Card con información -->
-    <div class="card" id="game-card">
-        <div class="title">Busca un juego 🎮</div>
-        <img src="" id="game-img" style="display:none;">
-        <div class="info" id="game-platform"></div>
-        <div class="info" id="game-genre"></div>
-        <div class="info" id="game-year"></div>
-    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    <script>
-        const API_KEY = "ee55dcab966c4a6180c75eae52a67abe"; // 🔑 tu API Key de RAWG
+        const firebaseConfig = {
+            apiKey: "AIzaSyAETEV6tMlu7v6RHUURfpH0f_NkOeBNVk0",
+            authDomain: "fuenteobstest.firebaseapp.com",
+            projectId: "fuenteobstest",
+            storageBucket: "fuenteobstest.firebasestorage.app",
+            messagingSenderId: "734398629121",
+            appId: "1:734398629121:web:7bccef8044f132be62c700",
+            measurementId: "G-KM4YV86E1V"
+        };
 
-        async function searchGame() {
-            const query = document.getElementById("search-input").value.trim();
-            if (!query) return;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-            const API_URL = `https://api.rawg.io/api/games?key=${API_KEY}&search=${encodeURIComponent(query)}&page_size=1`;
+        const card = document.getElementById("card");
+        const title = document.getElementById("title");
+        const img = document.getElementById("img");
+        const platforms = document.getElementById("platforms");
+        const genres = document.getElementById("genres");
+        const year = document.getElementById("year");
 
-            try {
-                const res = await fetch(API_URL);
-                const data = await res.json();
-                const game = data.results[0];
+        // Función para animar el cambio
+        function updateCard(game) {
+            // Fade-out
+            card.classList.remove("show");
 
-                if (!game) {
-                    document.querySelector(".title").textContent = "No se encontró el juego 😢";
-                    document.getElementById("game-img").style.display = "none";
-                    document.getElementById("game-platform").textContent = "";
-                    document.getElementById("game-genre").textContent = "";
-                    document.getElementById("game-year").textContent = "";
-                    return;
+            setTimeout(() => {
+                title.textContent = game.name || "Juego desconocido";
+                if (game.img) {
+                    img.src = game.img;
+                    img.style.display = "block";
+                } else {
+                    img.style.display = "none";
                 }
+                platforms.textContent = "Plataformas: " + (game.platforms || "N/A");
+                genres.textContent = "Géneros: " + (game.genres || "N/A");
+                year.textContent = "Año: " + (game.year || "Desconocido");
 
-                document.querySelector(".title").textContent = game.name;
-                document.getElementById("game-img").src = game.background_image;
-                document.getElementById("game-img").style.display = "block";
-                document.getElementById("game-platform").textContent = "Plataformas: " +
-                    (game.platforms ? game.platforms.map(p => p.platform.name).join(", ") : "N/A");
-                document.getElementById("game-genre").textContent = "Géneros: " +
-                    (game.genres ? game.genres.map(g => g.name).join(", ") : "N/A");
-                document.getElementById("game-year").textContent = "Año: " +
-                    (game.released ? game.released.split("-")[0] : "Desconocido");
-            } catch (err) {
-                console.error(err);
-                document.querySelector(".title").textContent = "Error al consultar API 😵";
-            }
+                // Fade-in
+                card.classList.add("show");
+            }, 400); // tiempo del fade-out antes de actualizar
         }
+
+        // Suscribirse en tiempo real a Firestore
+        const docRef = doc(db, "overlay", "currentGame");
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const game = docSnap.data();
+                updateCard(game);
+            }
+        });
+
+        // Mostrar la tarjeta inicial con animación
+        setTimeout(() => card.classList.add("show"), 300);
     </script>
 </body>
 </html>
