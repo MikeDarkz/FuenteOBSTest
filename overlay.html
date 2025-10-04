@@ -2,61 +2,77 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Overlay OBS</title>
+    <title>Overlay Lower Third</title>
     <style>
         body {
             background: transparent;
+            margin: 0;
+            padding: 0;
             font-family: 'Poppins', sans-serif;
-            text-align: center;
-            color: #c0aaff;
             overflow: hidden;
         }
 
-        .card {
-            background: rgba(20, 10, 40, 0.8);
+        .lower-third {
+            position: absolute;
+            bottom: 30px; /* Distancia desde el borde inferior */
+            left: 50%;
+            transform: translateX(-50%) translateY(120%);
+            width: 80%; /* Ajusta según tu gameplay */
+            max-width: 1000px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 25px;
             border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 0 25px #6c63ff, 0 0 50px #00d4ff;
-            max-width: 420px;
-            margin: auto;
+            background: rgba(20, 10, 40, 0.8);
+            box-shadow: 0 0 30px #6c63ff, 0 0 50px #00d4ff;
+            color: #d6c9ff;
             opacity: 0;
-            transform: scale(0.95);
             transition: all 0.6s ease-in-out;
         }
 
-            .card.show {
+            .lower-third.show {
+                transform: translateX(-50%) translateY(0);
                 opacity: 1;
-                transform: scale(1);
             }
 
-        img {
-            width: 100%;
+        .cover {
+            width: 100px;
+            height: 140px;
             border-radius: 12px;
-            box-shadow: 0 0 20px #00d4ff, 0 0 30px #6c63ff;
-            margin-top: 10px;
-        }
-
-        .title {
-            font-size: 26px;
-            color: #00d4ff;
-            margin: 15px 0;
-            text-shadow: 0 0 10px #00d4ff, 0 0 20px #6c63ff;
+            box-shadow: 0 0 15px #00d4ff, 0 0 25px #6c63ff;
+            object-fit: cover;
         }
 
         .info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00d4ff;
+            text-shadow: 0 0 10px #00d4ff, 0 0 20px #6c63ff;
+            margin-bottom: 8px;
+        }
+
+        .details {
             font-size: 16px;
-            color: #d6c9ff;
-            margin: 6px 0;
+            color: #c0aaff;
         }
     </style>
 </head>
 <body>
-    <div class="card" id="card">
-        <div class="title" id="title">Esperando...</div>
-        <img id="img" style="display:none;">
-        <div class="info" id="platforms"></div>
-        <div class="info" id="genres"></div>
-        <div class="info" id="year"></div>
+    <div class="lower-third" id="lowerThird">
+        <img id="img" class="cover" style="display:none;">
+        <div class="info">
+            <div class="title" id="title">Esperando juego...</div>
+            <div class="details" id="platforms"></div>
+            <div class="details" id="genres"></div>
+            <div class="details" id="year"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -76,17 +92,15 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const card = document.getElementById("card");
+        const lowerThird = document.getElementById("lowerThird");
         const title = document.getElementById("title");
         const img = document.getElementById("img");
         const platforms = document.getElementById("platforms");
         const genres = document.getElementById("genres");
         const year = document.getElementById("year");
 
-        // Función para animar el cambio
-        function updateCard(game) {
-            // Fade-out
-            card.classList.remove("show");
+        function updateLowerThird(game) {
+            lowerThird.classList.remove("show");
 
             setTimeout(() => {
                 title.textContent = game.name || "Juego desconocido";
@@ -100,22 +114,20 @@
                 genres.textContent = "Géneros: " + (game.genres || "N/A");
                 year.textContent = "Año: " + (game.year || "Desconocido");
 
-                // Fade-in
-                card.classList.add("show");
-            }, 400); // tiempo del fade-out antes de actualizar
+                lowerThird.classList.add("show");
+            }, 300);
         }
 
-        // Suscribirse en tiempo real a Firestore
         const docRef = doc(db, "overlay", "currentGame");
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const game = docSnap.data();
-                updateCard(game);
+                updateLowerThird(game);
             }
         });
 
-        // Mostrar la tarjeta inicial con animación
-        setTimeout(() => card.classList.add("show"), 300);
+        // Mostrar inicial
+        setTimeout(() => lowerThird.classList.add("show"), 400);
     </script>
 </body>
 </html>
