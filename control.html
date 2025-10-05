@@ -2,58 +2,262 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Control Juegos</title>
+    <title>Panel de Control Overlay</title>
+    <style>
+        body {
+            background: radial-gradient(circle at top left, #0b001a, #080014 60%);
+            font-family: 'Poppins', sans-serif;
+            color: #c0aaff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #00d4ff;
+            text-shadow: 0 0 10px #6c63ff;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        input, select, button {
+            background: rgba(30, 15, 60, 0.8);
+            border: 1px solid #6c63ff;
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: #d6c9ff;
+            outline: none;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+            input:focus, select:focus {
+                border-color: #00d4ff;
+                box-shadow: 0 0 10px #00d4ff;
+            }
+
+        button {
+            background: linear-gradient(45deg, #6c63ff, #00d4ff);
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: #fff;
+            transition: 0.3s;
+        }
+
+            button:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 20px #00d4ff;
+            }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .game-card {
+            background: rgba(25, 10, 45, 0.8);
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+            transition: 0.3s;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+            .game-card:hover {
+                transform: scale(1.03);
+                border-color: #00d4ff;
+                box-shadow: 0 0 15px #6c63ff;
+            }
+
+            .game-card img {
+                width: 100%;
+                height: 140px;
+                object-fit: cover;
+                border-radius: 8px;
+                margin-bottom: 8px;
+            }
+
+            .game-card h3 {
+                color: #00d4ff;
+                font-size: 18px;
+                margin: 5px 0;
+            }
+
+            .game-card p {
+                font-size: 14px;
+                margin: 3px 0;
+                color: #c0aaff;
+            }
+
+        #hideBtn {
+            background: linear-gradient(45deg, #ff3c6a, #6c63ff);
+        }
+
+        #loadingMsg {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #8f7bff;
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
-    <h2>Panel de Control</h2>
-    <input type="text" id="search-input" placeholder="Escribe un juego...">
-    <button onclick="updateGame()">Actualizar</button>
+    <h1>🎮 Control Overlay</h1>
+
+    <div class="controls">
+        <button id="hideBtn">🕹️ Ocultar información del juego</button>
+        <input type="text" id="searchInput" placeholder="Buscar juego por título...">
+        <select id="platformSelect">
+            <option value="">Todas las plataformas</option>
+        </select>
+        <button id="searchBtn">Buscar</button>
+    </div>
+
+    <div class="results" id="results"></div>
 
     <script type="module">
-    // Import Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAETEV6tMlu7v6RHUURfpH0f_NkOeBNVk0",
-        authDomain: "fuenteobstest.firebaseapp.com",
-        projectId: "fuenteobstest",
-        storageBucket: "fuenteobstest.firebasestorage.app",
-        messagingSenderId: "734398629121",
-        appId: "1:734398629121:web:7bccef8044f132be62c700",
-        measurementId: "G-KM4YV86E1V"
-    };
+        // ⚙️ Configuración Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAETEV6tMlu7v6RHUURfpH0f_NkOeBNVk0",
+            authDomain: "fuenteobstest.firebaseapp.com",
+            projectId: "fuenteobstest",
+            storageBucket: "fuenteobstest.firebasestorage.app",
+            messagingSenderId: "734398629121",
+            appId: "1:734398629121:web:7bccef8044f132be62c700",
+            measurementId: "G-KM4YV86E1V"
+        };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-    async function updateGame() {
-      const query = document.getElementById("search-input").value.trim();
-      if (!query) return;
+        const API_KEY = "ee55dcab966c4a6180c75eae52a67abe";
+        const searchInput = document.getElementById("searchInput");
+        const platformSelect = document.getElementById("platformSelect");
+        const searchBtn = document.getElementById("searchBtn");
+        const hideBtn = document.getElementById("hideBtn");
+        const resultsContainer = document.getElementById("results");
 
-        const API_KEY = "ee55dcab966c4a6180c75eae52a67abe"; // API de RAWG
-      const url = `https://api.rawg.io/api/games?key=${API_KEY}&search=${encodeURIComponent(query)}&page_size=1`;
+        let nextPage = null;
+        let isLoading = false;
 
-      const res = await fetch(url);
-      const data = await res.json();
-      const game = data.results[0];
-      if (!game) {
-        alert("Juego no encontrado");
-        return;
-      }
+        // 🔹 Cargar plataformas al inicio
+        async function loadPlatforms() {
+            const res = await fetch(`https://api.rawg.io/api/platforms?key=${API_KEY}`);
+            const data = await res.json();
+            data.results.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.id;
+                opt.textContent = p.name;
+                platformSelect.appendChild(opt);
+            });
+        }
 
-      // Guardar en Firestore
-      await setDoc(doc(db, "overlay", "currentGame"), {
-        name: game.name,
-        img: game.background_image,
-        platforms: game.platforms?.map(p => p.platform.name).join(", "),
-        genres: game.genres?.map(g => g.name).join(", "),
-        year: game.released?.split("-")[0] || "Desconocido"
-      });
+        // 🔹 Construir URL
+        function buildSearchURL() {
+            const title = searchInput.value.trim();
+            const platform = platformSelect.value;
+            let url = `https://api.rawg.io/api/games?key=${API_KEY}`;
+            if (title) url += `&search=${encodeURIComponent(title)}`;
+            if (platform) url += `&platforms=${platform}`;
+            return url;
+        }
 
-      alert("Juego actualizado en OBS");
-    }
-    window.updateGame = updateGame;
+        // 🔹 Buscar juegos
+        async function searchGames(url) {
+            if (isLoading) return;
+            isLoading = true;
+
+            const loadingMsg = document.createElement("p");
+            loadingMsg.id = "loadingMsg";
+            loadingMsg.textContent = "Cargando...";
+            resultsContainer.appendChild(loadingMsg);
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                nextPage = data.next;
+
+                // Quitar mensaje de carga
+                resultsContainer.querySelector("#loadingMsg")?.remove();
+
+                data.results.forEach(game => {
+                    const card = document.createElement("div");
+                    card.classList.add("game-card");
+                    card.innerHTML = `
+                ${game.background_image ? `<img src="${game.background_image}" alt="${game.name}">` : ""}
+                <h3>${game.name}</h3>
+                <p>${game.released ? "Año: " + game.released.slice(0, 4) : "Año desconocido"}</p>
+                <p>${game.genres.map(g => g.name).join(", ")}</p>
+                <p><strong>Plataformas:</strong> ${game.platforms?.map(p => p.platform.name).join(", ") || "Desconocidas"}</p>
+              `;
+                    card.addEventListener("click", () => sendToFirebase(game));
+                    resultsContainer.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+                resultsContainer.querySelector("#loadingMsg")?.remove();
+            }
+
+            isLoading = false;
+        }
+
+        // 🔹 Buscar inicial
+        async function handleSearch() {
+            resultsContainer.innerHTML = "";
+            nextPage = null;
+            await searchGames(buildSearchURL());
+        }
+
+        // 🔹 Enviar a Firebase
+        async function sendToFirebase(game) {
+            const gameData = {
+                name: game.name,
+                img: game.background_image || "",
+                genres: game.genres.map(g => g.name).join(", "),
+                platforms: game.platforms?.map(p => p.platform.name).join(", ") || "Desconocidas",
+                year: game.released ? game.released.slice(0, 4) : "Desconocido"
+            };
+            await setDoc(doc(db, "overlay", "currentGame"), gameData);
+            alert(`🎮 Enviado a overlay: ${game.name}`);
+        }
+
+        // 🔹 Ocultar overlay
+        async function hideGameInfo() {
+            await setDoc(doc(db, "overlay", "currentGame"), { hidden: true });
+            alert("Overlay oculto temporalmente 🎭");
+        }
+
+        // 🔹 Scroll infinito
+        window.addEventListener("scroll", async () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 && nextPage) {
+                await searchGames(nextPage);
+            }
+        });
+
+        searchBtn.addEventListener("click", handleSearch);
+        hideBtn.addEventListener("click", hideGameInfo);
+        searchInput.addEventListener("keypress", e => { if (e.key === "Enter") handleSearch(); });
+
+        loadPlatforms();
     </script>
 </body>
 </html>

@@ -5,73 +5,60 @@
     <title>Overlay Lower Third</title>
     <style>
         body {
-            background: transparent;
             margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
+            background: transparent;
             overflow: hidden;
+            font-family: 'Poppins', sans-serif;
         }
 
-        .lower-third {
-            position: absolute;
-            bottom: 30px; /* Distancia desde el borde inferior */
+        #container {
+            position: fixed;
+            bottom: 30px;
             left: 50%;
-            transform: translateX(-50%) translateY(120%);
-            width: 80%; /* Ajusta según tu gameplay */
-            max-width: 1000px;
+            transform: translateX(-50%);
+            background: rgba(20, 10, 40, 0.85);
+            border: 2px solid #6c63ff;
+            border-radius: 15px;
+            padding: 10px 20px;
             display: flex;
             align-items: center;
             gap: 15px;
-            padding: 15px 25px;
-            border-radius: 20px;
-            background: rgba(20, 10, 40, 0.8);
-            box-shadow: 0 0 30px #6c63ff, 0 0 50px #00d4ff;
-            color: #d6c9ff;
+            color: #c0aaff;
+            box-shadow: 0 0 20px #00d4ff;
             opacity: 0;
-            transition: all 0.6s ease-in-out;
+            transition: opacity 0.8s ease;
         }
 
-            .lower-third.show {
-                transform: translateX(-50%) translateY(0);
+            #container.show {
                 opacity: 1;
             }
 
-        .cover {
-            width: 100px;
-            height: 140px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px #00d4ff, 0 0 25px #6c63ff;
+        img {
+            width: 90px;
+            height: 90px;
+            border-radius: 10px;
             object-fit: cover;
         }
 
-        .info {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .title {
-            font-size: 28px;
-            font-weight: bold;
+        .info h2 {
+            margin: 0;
             color: #00d4ff;
-            text-shadow: 0 0 10px #00d4ff, 0 0 20px #6c63ff;
-            margin-bottom: 8px;
         }
 
-        .details {
-            font-size: 16px;
-            color: #c0aaff;
+        .info p {
+            margin: 2px 0;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <div class="lower-third" id="lowerThird">
-        <img id="img" class="cover" style="display:none;">
+    <div id="container">
+        <img id="gameImage" src="" alt="">
         <div class="info">
-            <div class="title" id="title">Esperando juego...</div>
-            <div class="details" id="platforms"></div>
-            <div class="details" id="genres"></div>
-            <div class="details" id="year"></div>
+            <h2 id="gameName"></h2>
+            <p id="gameGenres"></p>
+            <p id="gamePlatforms"></p>
+            <p id="gameYear"></p>
         </div>
     </div>
 
@@ -92,42 +79,33 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const lowerThird = document.getElementById("lowerThird");
-        const title = document.getElementById("title");
-        const img = document.getElementById("img");
-        const platforms = document.getElementById("platforms");
-        const genres = document.getElementById("genres");
-        const year = document.getElementById("year");
+        const container = document.getElementById("container");
+        const gameName = document.getElementById("gameName");
+        const gameGenres = document.getElementById("gameGenres");
+        const gamePlatforms = document.getElementById("gamePlatforms");
+        const gameYear = document.getElementById("gameYear");
+        const gameImage = document.getElementById("gameImage");
 
-        function updateLowerThird(game) {
-            lowerThird.classList.remove("show");
-
-            setTimeout(() => {
-                title.textContent = game.name || "Juego desconocido";
-                if (game.img) {
-                    img.src = game.img;
-                    img.style.display = "block";
-                } else {
-                    img.style.display = "none";
-                }
-                platforms.textContent = "Plataformas: " + (game.platforms || "N/A");
-                genres.textContent = "Géneros: " + (game.genres || "N/A");
-                year.textContent = "Año: " + (game.year || "Desconocido");
-
-                lowerThird.classList.add("show");
-            }, 300);
-        }
-
-        const docRef = doc(db, "overlay", "currentGame");
-        onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const game = docSnap.data();
-                updateLowerThird(game);
+        onSnapshot(doc(db, "overlay", "currentGame"), (docSnap) => {
+            const data = docSnap.data();
+            if (!data || data.hidden) {
+                container.classList.remove("show");
+                return;
             }
-        });
 
-        // Mostrar inicial
-        setTimeout(() => lowerThird.classList.add("show"), 400);
+            gameName.textContent = data.name || "";
+            gameGenres.textContent = `🎭 ${data.genres || ""}`;
+            gamePlatforms.textContent = `🕹️ ${data.platforms || ""}`;
+            gameYear.textContent = `📅 ${data.year || ""}`;
+            if (!data.img) {
+                gameImage.style.display = "none";
+            } else {
+                gameImage.style.display = "block";
+                gameImage.src = data.img;
+            }
+
+            container.classList.add("show");
+        });
     </script>
 </body>
 </html>
