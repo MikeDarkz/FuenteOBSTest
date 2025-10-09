@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <title>Overlay Lower Third</title>
     <style>
+        @font-face {
+            font-family: 'GameTitle';
+            src: url('./Fonts/fonnts.com-Noka_Black.woff2') format('woff2'); 
+                /*url('./Fonts/fonnts.com-Noka_Hairline.woff2') format('woff2'), 
+                url('./Fonts/fonnts.com-Noka_Light.woff2') format('woff2'), 
+                url('./Fonts/fonnts.com-Noka_Medium.woff2') format('woff2'), 
+                url('./Fonts/fonnts.com-Noka_Semibold.woff2') format('woff2'), 
+                url('./Fonts/fonnts.com-Noka_Black.woff2') format('woff2');*/
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'GameBody';
+            src: url('./Fonts/Proxima Nova Medium Regular.woff2') format('woff2'); 
+            font-display: swap;
+        }
+
+        #gameName {
+            font-family: 'GameTitle';
+            letter-spacing: 0.5px;
+        }
+
+        .info p {
+            font-family: 'GameBody';
+            letter-spacing: 0.5px;
+        }
+
         body {
             margin: 0;
             background: transparent;
@@ -16,38 +43,43 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(20, 10, 40, 0.85);
+            background: rgba(240, 103, 158, 0.85);
             border: 2px solid #6c63ff;
             border-radius: 15px;
-            padding: 10px 20px;
+            border-color: #000000;
             display: flex;
             align-items: center;
-            gap: 15px;
-            color: #c0aaff;
+            gap: 5px;
             box-shadow: 0 0 20px #00d4ff;
             opacity: 0;
             transition: opacity 0.8s ease;
         }
 
-            #container.show {
-                opacity: 1;
-            }
+        #container.show {
+            opacity: 1;
+        }
 
         img {
             width: 90px;
             height: 90px;
             border-radius: 10px;
             object-fit: cover;
+            margin-left: 5px;
+        }
+
+        .info {
+            padding: 5px;
         }
 
         .info h2 {
             margin: 0;
-            color: #00d4ff;
+            color: #ffffff;
         }
 
         .info p {
             margin: 2px 0;
             font-size: 14px;
+            color: #ffffff;
         }
     </style>
 </head>
@@ -86,25 +118,41 @@
         const gameYear = document.getElementById("gameYear");
         const gameImage = document.getElementById("gameImage");
 
+        let lastGameId = null; // Para detectar cambios
+
         onSnapshot(doc(db, "overlay", "currentGame"), (docSnap) => {
             const data = docSnap.data();
+
             if (!data || data.hidden) {
+                // Oculta si no hay datos
                 container.classList.remove("show");
+                lastGameId = null;
                 return;
             }
 
-            gameName.textContent = data.name || "";
-            gameGenres.textContent = `🎭 ${data.genres || ""}`;
-            gamePlatforms.textContent = `🕹️ ${data.platforms || ""}`;
-            gameYear.textContent = `📅 ${data.year || ""}`;
-            if (!data.img) {
-                gameImage.style.display = "none";
-            } else {
-                gameImage.style.display = "block";
-                gameImage.src = data.img;
-            }
+            // Si es el mismo juego, no repetir animación
+            const currentId = `${data.name || ''}-${data.year || ''}`;
+            if (currentId === lastGameId) return;
+            lastGameId = currentId;
 
-            container.classList.add("show");
+            // Fade out, luego actualizar y fade in
+            container.classList.remove("show");
+
+            setTimeout(() => {
+                gameName.textContent = data.name || "";
+                gameGenres.textContent = data.genres ? `🎭 ${data.genres}` : "";
+                gamePlatforms.textContent = data.platforms ? `🕹️ ${data.platforms}` : "";
+                gameYear.textContent = data.year ? `📅 ${data.year}` : "";
+
+                if (!data.img) {
+                    gameImage.style.display = "none";
+                } else {
+                    gameImage.style.display = "block";
+                    gameImage.src = data.img;
+                }
+
+                container.classList.add("show");
+            }, 200); // Delay para permitir el fade-out antes del fade-in
         });
     </script>
 </body>
