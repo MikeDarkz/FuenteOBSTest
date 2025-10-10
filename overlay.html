@@ -6,8 +6,9 @@
     <style>
         @font-face {
             font-family: 'GameTitle';
-            src: url('./Fonts/fonnts.com-Noka_Black.woff2') format('woff2'); 
-                /*url('./Fonts/fonnts.com-Noka_Hairline.woff2') format('woff2'), 
+            src: url('./Fonts/NokaFontFamily/Noka-Bold-iF66e06b12a6732.woff2') format('woff2');
+            /*url('./Fonts/fonnts.com-Noka_Black.woff2') format('woff2'); 
+                url('./Fonts/fonnts.com-Noka_Hairline.woff2') format('woff2'), 
                 url('./Fonts/fonnts.com-Noka_Light.woff2') format('woff2'), 
                 url('./Fonts/fonnts.com-Noka_Medium.woff2') format('woff2'), 
                 url('./Fonts/fonnts.com-Noka_Semibold.woff2') format('woff2'), 
@@ -29,13 +30,24 @@
         .info p {
             font-family: 'GameBody';
             letter-spacing: 0.5px;
+            margin: 2px 0;
+            font-size: 14px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .info p img {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
         }
 
         body {
             margin: 0;
             background: transparent;
             overflow: hidden;
-            font-family: 'Poppins', sans-serif;
         }
 
         #container {
@@ -44,13 +56,11 @@
             left: 50%;
             transform: translateX(-50%);
             background: rgba(240, 103, 158, 0.85);
-            border: 2px solid #6c63ff;
+            border: 2px solid #000000;
             border-radius: 15px;
-            border-color: #000000;
             display: flex;
             align-items: center;
             gap: 5px;
-            box-shadow: 0 0 20px #00d4ff;
             opacity: 0;
             transition: opacity 0.8s ease;
         }
@@ -59,26 +69,20 @@
             opacity: 1;
         }
 
-        img {
+        #gameImage {
             width: 90px;
             height: 90px;
             border-radius: 10px;
             object-fit: cover;
-            margin-left: 5px;
+            margin-left: 13px;
         }
 
         .info {
-            padding: 5px;
+            padding: 5px 15px 5px 5px;
         }
 
         .info h2 {
             margin: 0;
-            color: #ffffff;
-        }
-
-        .info p {
-            margin: 2px 0;
-            font-size: 14px;
             color: #ffffff;
         }
     </style>
@@ -86,11 +90,21 @@
 <body>
     <div id="container">
         <img id="gameImage" src="" alt="">
+        
         <div class="info">
             <h2 id="gameName"></h2>
-            <p id="gameGenres"></p>
-            <p id="gamePlatforms"></p>
-            <p id="gameYear"></p>
+            <p id="gameGenres">
+                <img src="./Assets/genre.svg" />
+                <span id="genreText"></span>
+            </p>
+            <p id="gamePlatforms">
+                <img src="./Assets/joystick.svg" />
+                <span id="platformText"></span>
+            </p>
+            <p id="gameYear">
+                <img src="./Assets/calendar.svg" />
+                <span id="yearText"></span>
+            </p>
         </div>
     </div>
 
@@ -113,9 +127,9 @@
 
         const container = document.getElementById("container");
         const gameName = document.getElementById("gameName");
-        const gameGenres = document.getElementById("gameGenres");
-        const gamePlatforms = document.getElementById("gamePlatforms");
-        const gameYear = document.getElementById("gameYear");
+        const gameGenres = document.getElementById("genreText");
+        const gamePlatforms = document.getElementById("platformText");
+        const gameYear = document.getElementById("yearText");
         const gameImage = document.getElementById("gameImage");
 
         let lastGameId = null; // Para detectar cambios
@@ -140,9 +154,9 @@
 
             setTimeout(() => {
                 gameName.textContent = data.name || "";
-                gameGenres.textContent = data.genres ? `🎭 ${data.genres}` : "";
-                gamePlatforms.textContent = data.platforms ? `🕹️ ${data.platforms}` : "";
-                gameYear.textContent = data.year ? `📅 ${data.year}` : "";
+                gameGenres.textContent = data.genres ? `${data.genres}` : "";
+                gamePlatforms.textContent = data.platforms ? `${data.platforms}` : "";
+                gameYear.textContent = data.year ? `${data.year}` : "";
 
                 if (!data.img) {
                     gameImage.style.display = "none";
